@@ -26,3 +26,7 @@
 *.exe
 *.out
 *.app
+powerplug
+
+#IDE files
+*.sublime-workspace
