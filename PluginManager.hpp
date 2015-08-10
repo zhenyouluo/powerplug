@@ -28,8 +28,10 @@ public:
     BarFactories &getBarFactories();
 
     typedef void (*registration_func_t)(PluginManager *);
+    typedef int  (*query_version_func_t)(void);
 
     static const std::string pluginCallbackName;
+    static const std::string pluginVersionApi;
 
 private:
     FooFactories mFooFactories;

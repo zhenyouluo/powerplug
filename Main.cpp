@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 
+#include "Version.hpp"
 #include "PluginManager.hpp"
 #include "BarComponent.hpp"
 #include "FooComponent.hpp"
@@ -28,7 +29,6 @@ static const std::string getCwd()
     getcwd(buffer, MAX_PATHLEN + MAX_FILELEN);
     return std::string(buffer);
 }
-
 
 static void loadPlugins(PluginManager *pm)
 {
@@ -51,27 +51,52 @@ static void loadPlugins(PluginManager *pm)
                 continue;
             }
 
+
+            /* Load the registration function... */
             const PluginManager::registration_func_t pluginCallback =
                 reinterpret_cast<PluginManager::registration_func_t>(
                     dlsym(handle, PluginManager::pluginCallbackName.c_str()));
 
-            const char * const dlsym_error = dlerror();
+            const char * const reg_sym_err = dlerror();
 
-            if (dlsym_error)
+            if (reg_sym_err)
             {
                 std::cerr << "Cannot load symbol \""
                     << PluginManager::pluginCallbackName << "\": "
-                    << dlsym_error << std::endl;
+                    << reg_sym_err << std::endl;
                 dlclose(handle);
                 continue;
             }
 
-            else
+            /* Load the versioning function... */
+            const PluginManager::query_version_func_t queryVersion =
+                reinterpret_cast<PluginManager::query_version_func_t>(
+                    dlsym(handle, PluginManager::pluginVersionApi.c_str()));
+
+            const char * const ver_sym_err = dlerror();
+
+            if (ver_sym_err)
             {
-                std::cout << "[Main]: Loading plugin \""
-                                    << file->d_name << "\"" << std::endl;
-                pluginCallback(pm);
+                std::cerr << "Cannot load symbol \""
+                    << PluginManager::pluginCallbackName << "\": "
+                    << ver_sym_err << std::endl;
+                dlclose(handle);
+                continue;
             }
+
+            std::cout << "[Main]: Loading plugin \""
+                                << file->d_name << "\"" << std::endl;
+
+            const int expectedVersion = queryVersion();
+            if (expectedVersion != VERSION)
+            {
+                std::cerr << "[Main]: Plugin expects system version "
+                          << expectedVersion << ", but system is version "
+                          << VERSION << std::endl;
+                continue;
+            }
+
+            pluginCallback(pm);
         }
     }
     closedir(pluginDir);
@@ -87,18 +112,18 @@ int main(int argc, char *argv[])
     PluginManager::BarFactories barFactories = manager.getBarFactories();
 
 
-    BarComponentFactory *barFact = barFactories.front();
-    if (barFact)
+    if (!barFactories.empty())
     {
+        BarComponentFactory *barFact = barFactories.front();
         std::cout
             << "[Main]: Asking plugin's factory to create a Bar Component "
             << std::endl;
         barFact->create();
     }
 
-    FooComponentFactory *fooFact = fooFactories.front();
-    if (fooFact)
+    if (!fooFactories.empty())
     {
+        FooComponentFactory *fooFact = fooFactories.front();
         std::cout
             << "[Main]: Asking plugin's factory to create a Foo Component "
             << std::endl;

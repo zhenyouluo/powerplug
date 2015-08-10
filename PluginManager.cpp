@@ -7,6 +7,7 @@
 #include "FooComponent.hpp"
 
 const std::string PluginManager::pluginCallbackName = "registerPlugin";
+const std::string PluginManager::pluginVersionApi   = "getCompatibleVersion";
 
 PluginManager::PluginManager()
 {

@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "Version.hpp"
 #include "PluginManager.hpp"
 #include "FooComponent.hpp"
 
@@ -35,3 +36,9 @@ extern "C" void registerPlugin(PluginManager *pluginManager)
     FooComponentFactory *factory = new FooPlugin1::Factory();
     pluginManager->registerComponent(factory);
 }
+
+extern "C" int getCompatibleVersion(void)
+{
+    return VERSION;
+}
+
