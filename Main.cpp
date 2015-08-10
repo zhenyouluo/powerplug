@@ -1,5 +1,35 @@
 /* GPL 2015 Jake Sebastian-Jones */
 
+/**
+ Largely inspired by Cygon's Blog
+@see http://blog.nuclex-games.com/tutorials/cxx/plugin-architecture/
+
+Here are some of the justifications for the design decisions:
+
+1. Choice of plugin registration API. I.e. what function should be exposed in
+   the shared library?
+
+   Choices considered:
+        a. void *createInstance(const char*)
+
+           In this case we call createInstance in all the shared libs, giving
+           the name of the component as the argument (for example "Renderer"),
+           any of them which don't return NULL are renderers and you can
+           cast the pointer to a Renderer object.
+
+           Criticism:
+           This method has several flaws.
+            * It requires casting the return value of the registration
+            * The registration always instatiates the component
+              (which you might not want to do - you might want to make a choice
+               first)
+            * Passing a string as the parameter doesn't take advantage of type
+              safety.
+            * When asked for a "Renderer" a plugin could just instantiate a
+              "Decoder", or give a garbage non-null value (easy to write a
+              plugin that crashes the whole system)
+ */
+
 #include <dirent.h>
 #include <stdio.h>
 #include <dlfcn.h>
